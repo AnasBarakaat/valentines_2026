@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Will you be my Valentine? 💘</title>
+  <style>
+    :root{
+      --bg: #0b1020;
+      --text: #ffffff;
+      --muted: rgba(255,255,255,.82);
+      --card: rgba(0,0,0,.28);
+      --border: rgba(255,255,255,.18);
+      --shadow: 0 18px 60px rgba(0,0,0,.35);
+      --yes: #ff4d7d;
+      --yes2:#ff2f68;
+      --no: rgba(255,255,255,.20);
+      --blur: 14px;
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: var(--bg);
+      overflow: hidden;
+      color: var(--text);
+    }
+
+    /* Background animation layer */
+    #bg {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 0;
+    }
+
+    /* Darken overlay so text stays readable on bright animations */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 50% 40%, rgba(0,0,0,.10), rgba(0,0,0,.55));
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* Foreground content */
+    .wrap {
+      position: relative;
+      z-index: 2;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: min(520px, 92vw);
+      padding: 28px 26px;
+      border-radius: var(--radius);
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(var(--blur));
+      -webkit-backdrop-filter: blur(var(--blur));
+      text-align: center;
+      transform: translateY(10px);
+      opacity: 0;
+      transition: opacity 600ms ease, transform 600ms ease;
+    }
+
+    .card.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(26px, 4vw, 38px);
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 650ms ease, transform 650ms ease;
+      transition-delay: 250ms;
+    }
+
+    p {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.5;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 650ms ease, transform 650ms ease;
+      transition-delay: 450ms;
+    }
+
+    .card.show h1,
+    .card.show p {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .btnRow {
+      margin-top: 22px;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 650ms ease, transform 650ms ease;
+      transition-delay: 900ms;
+    }
+
+    .card.show .btnRow {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px 18px;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      transition: transform 200ms ease, opacity 200ms ease, filter 200ms ease;
+      user-select: none;
+    }
+
+    #yesBtn {
+      background: linear-gradient(135deg, var(--yes), var(--yes2));
+      color: white;
+      box-shadow: 0 10px 30px rgba(255, 77, 125, .25);
+      transform: scale(1);
+    }
+
+    #yesBtn:hover { filter: brightness(1.06); }
+
+    /* "No" is shown but effectively not usable */
+    #noBtn {
+      background: var(--no);
+      color: rgba(255,255,255,.95);
+      cursor: default;
+    }
+
+    /* Optional: little wiggle on first render for cute effect */
+    .wiggle {
+      animation: wiggle 1.2s ease 1;
+    }
+    @keyframes wiggle {
+      0%, 100% { transform: translateY(0); }
+      20% { transform: translateY(-2px); }
+      40% { transform: translateY(2px); }
+      60% { transform: translateY(-1px); }
+      80% { transform: translateY(1px); }
+    }
+
+    /* When "No" is hovered: hide it, enlarge Yes */
+    .noHover #noBtn {
+      opacity: 0;
+      transform: scale(0.7);
+      pointer-events: none;
+      width: 0;
+      padding-left: 0;
+      padding-right: 0;
+      margin: 0;
+      border-width: 0;
+      overflow: hidden;
+    }
+
+    .noHover #yesBtn {
+      transform: scale(1.22);
+      filter: brightness(1.06);
+    }
+
+    /* Mobile: tapping No triggers same behavior */
+    @media (hover: none) {
+      #noBtn { cursor: pointer; }
+    }
+
+    /* Tiny footer text if you want */
+    .hint {
+      margin-top: 14px;
+      font-size: 12px;
+      color: rgba(255,255,255,.55);
+      opacity: 0;
+      transition: opacity 650ms ease;
+      transition-delay: 1100ms;
+    }
+    .card.show .hint { opacity: 1; }
+  </style>
+</head>
+
+<body>
+  <!-- Your background animation canvas -->
+  <canvas id="bg"></canvas>
+  <div class="overlay"></div>
+
+  <div class="wrap">
+    <div class="card" id="card">
+      <h1 id="headline">Will you be my Valentine? 💘</h1>
+      <p id="subtext">I have a very important question for you…</p>
+
+      <div class="btnRow" id="btnRow">
+        <button id="yesBtn" type="button">Yes 💞</button>
+        <button id="noBtn" type="button" aria-disabled="true">No 🙃</button>
+      </div>
+
+      <div class="hint">P.S. the “No” option is broken 😌</div>
+    </div>
+  </div>
+
+  <script>
+    // ---------------------------
+    // 1) BACKGROUND ANIMATION HOOK
+    // Put your custom background animation JS inside startBackgroundAnimation()
+    // ---------------------------
+    const canvas = document.getElementById("bg");
+    const ctx = canvas.getContext("2d", { alpha: true });
+
+    function resizeCanvas() {
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      canvas.width = Math.floor(window.innerWidth * dpr);
+      canvas.height = Math.floor(window.innerHeight * dpr);
+      canvas.style.width = window.innerWidth + "px";
+      canvas.style.height = window.innerHeight + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    function startBackgroundAnimation() {
+      // Replace this demo animation with yours.
+      // Demo: floating hearts
+      const hearts = Array.from({ length: 24 }, () => ({
+        x: Math.random() * window.innerWidth,
+        y: window.innerHeight + Math.random() * window.innerHeight,
+        s: 0.6 + Math.random() * 1.6,
+        v: 0.5 + Math.random() * 1.4,
+        a: Math.random() * Math.PI * 2
+      }));
+
+      function drawHeart(x, y, size) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(size, size);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(-10, -10, -25, 5, 0, 22);
+        ctx.bezierCurveTo(25, 5, 10, -10, 0, 0);
+        ctx.closePath();
+        ctx.fillStyle = "rgba(255, 77, 125, 0.18)";
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function tick() {
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        for (const h of hearts) {
+          h.y -= h.v;
+          h.x += Math.sin(h.a) * 0.6;
+          h.a += 0.02;
+
+          drawHeart(h.x, h.y, h.s);
+
+          if (h.y < -50) {
+            h.y = window.innerHeight + 80;
+            h.x = Math.random() * window.innerWidth;
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+      tick();
+    }
+
+    startBackgroundAnimation();
+
+    // ---------------------------
+    // 2) FOREGROUND TRANSITIONS
+    // ---------------------------
+    const card = document.getElementById("card");
+    const yesBtn = document.getElementById("yesBtn");
+    const noBtn = document.getElementById("noBtn");
+    const btnRow = document.getElementById("btnRow");
+
+    // Show the card after a short delay (small transition)
+    setTimeout(() => {
+      card.classList.add("show", "wiggle");
+      setTimeout(() => card.classList.remove("wiggle"), 1300);
+    }, 350);
+
+    // ---------------------------
+    // 3) "NO" DISAPPEARS + YES GROWS (only yes clickable)
+    // ---------------------------
+    function triggerNoHover() {
+      card.classList.add("noHover");
+    }
+    function resetNoHover() {
+      card.classList.remove("noHover");
+    }
+
+    // Desktop hover
+    noBtn.addEventListener("mouseenter", triggerNoHover);
+    btnRow.addEventListener("mouseleave", resetNoHover);
+
+    // Mobile: tap No triggers same behavior (but still not actionable)
+    noBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      triggerNoHover();
+    });
+
+    // Ensure "No" never does anything meaningful
+    noBtn.addEventListener("pointerdown", (e) => e.preventDefault());
+
+    // Yes is the only real action
+    yesBtn.addEventListener("click", () => {
+      // Change this to whatever you want (redirect, show message, confetti, etc.)
+      card.innerHTML = `
+        <h1 style="margin:0; font-size:clamp(26px,4vw,38px); line-height:1.15;">YAY!! 💖🥹</h1>
+        <p style="margin:12px 0 0; color:rgba(255,255,255,.82); font-size:16px; line-height:1.5;">
+          You just made me the happiest person 😭✨
+        </p>
+      `;
+    });
+  </script>
+</body>
+</html>
