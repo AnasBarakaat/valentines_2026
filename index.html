@@ -6,23 +6,21 @@
   <title>Valentine Quest</title>
   <style>
     :root{
-      --bg: #cfe0ff;
-      --panel: rgba(255,255,255,0.85);
-      --text: #1b1b1b;
-      --shadow: rgba(0,0,0,0.18);
+      /* Make entry slower */
+      --inDur: 2600ms;
+      --outDur: 2000ms;
+      --dropDur: 650ms;
 
-      /* tweak these if you want faster/slower movement */
-      --inDur: 1400ms;
-      --outDur: 1200ms;
-      --dropDur: 520ms;
+      /* Fade speed */
+      --fadeDur: 240ms;
     }
 
     * { box-sizing: border-box; }
     body{
       margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
-      background: var(--bg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans";
       overflow: hidden;
+      background: #cfe0ff; /* fallback */
     }
 
     /* stage */
@@ -30,20 +28,8 @@
       position: relative;
       width: 100vw;
       height: 100vh;
-      display: grid;
-      place-items: center;
       overflow: hidden;
       user-select: none;
-    }
-
-    /* simple soft ground band */
-    .ground{
-      position:absolute;
-      left:0; right:0;
-      bottom:0;
-      height: 28vh;
-      background: rgba(255,255,255,0.45);
-      filter: blur(0px);
     }
 
     /* screens */
@@ -54,108 +40,136 @@
       place-items:center;
       opacity:0;
       pointer-events:none;
-      transition: opacity 350ms ease;
+      transition: opacity var(--fadeDur) ease;
+      /* per-screen */
+      background: var(--bg, #cfe0ff);
     }
     .screen.active{
       opacity:1;
       pointer-events:auto;
     }
 
-    /* “pixel” look */
+    /* pixel look */
     .pixel{
       image-rendering: pixelated;
       image-rendering: crisp-edges;
     }
 
-    /* animal */
+    /* ====== ACTOR: CENTER VERTICALLY ====== */
     .actor{
       position:absolute;
-      bottom: 18vh;
-      left: -40vw; /* start off-screen */
-      width: min(220px, 40vw);
+      left: -60vw;              /* start off-screen left */
+      top: 50%;
+      transform: translate3d(0, -50%, 0);
+      width: min(240px, 42vw);
       height: auto;
-      transform: translateX(0);
-    }
-    /* slightly different default for the cat balloon so it sits higher */
-    .actor.cat-balloon{
-      bottom: 28vh;
-      width: min(200px, 38vw);
+      will-change: transform;
     }
 
-    /* question panel */
+    /* cat balloon sits a bit higher BEFORE drop for effect */
+    .actor.cat-balloon{
+      width: min(220px, 40vw);
+      top: 42%;
+      transform: translate3d(0, -50%, 0);
+    }
+
+    /* Question area ABOVE actor, no background */
     .qa{
       position:absolute;
-      bottom: 6vh;
-      width: min(680px, 92vw);
-      background: var(--panel);
-      border: 4px solid #1b1b1b;
-      box-shadow: 10px 10px 0 var(--shadow);
-      padding: 16px 16px 14px;
-      border-radius: 10px; /* tiny rounding ok; keep pixel vibe with border/shadow */
+      top: 10vh;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(760px, 94vw);
+      text-align:center;
+
       opacity:0;
-      transform: translateY(10px);
+      transform-origin: center;
       transition: opacity 260ms ease, transform 260ms ease;
+      pointer-events:none;
     }
     .qa.show{
       opacity:1;
-      transform: translateY(0);
-    }
-    .q{
-      margin:0 0 10px 0;
-      font-weight: 800;
-      color: var(--text);
-      font-size: clamp(18px, 2.2vw, 26px);
-      letter-spacing: 0.2px;
-      text-align:center;
+      transform: translateX(-50%) translateY(0);
+      pointer-events:auto;
     }
 
-    /* pixel buttons */
+    .q{
+      margin:0 0 12px 0;
+      font-weight: 900;
+      font-size: clamp(18px, 2.4vw, 28px);
+      color: var(--qColor, #1b1b1b);
+      /* readable on soft backgrounds, still "no panel" */
+      text-shadow:
+        0 2px 0 rgba(255,255,255,0.65),
+        0 0 10px rgba(0,0,0,0.08);
+    }
+
+    /* ====== PIXEL BUTTONS w/ per-screen palette ====== */
     .btnRow{
       display:flex;
-      gap:12px;
+      gap:14px;
       justify-content:center;
       flex-wrap:wrap;
     }
     .px-btn{
       appearance:none;
-      border: 4px solid #1b1b1b;
-      background: #ffffff;
-      color:#1b1b1b;
+      border: 4px solid var(--btnBorder, #1b1b1b);
+      background: var(--btnA, #ffffff);
+      color: var(--btnText, #1b1b1b);
       padding: 10px 18px;
       font-weight: 900;
       font-size: 18px;
       cursor:pointer;
-      box-shadow: 6px 6px 0 var(--shadow);
-      transform: translate(0,0);
-      transition: transform 80ms ease, box-shadow 80ms ease;
       border-radius: 8px;
+      box-shadow: 6px 6px 0 rgba(0,0,0,0.18);
+      transform: translate(0,0);
+      transition: transform 90ms ease, box-shadow 90ms ease, filter 120ms ease;
     }
-    .px-btn:hover{ transform: translate(-1px,-1px); box-shadow: 7px 7px 0 var(--shadow); }
-    .px-btn:active{ transform: translate(2px,2px); box-shadow: 4px 4px 0 var(--shadow); }
+    .px-btn.alt{
+      background: var(--btnB, #ffffff);
+    }
+    .px-btn:hover{
+      transform: translate(-1px,-1px);
+      box-shadow: 7px 7px 0 rgba(0,0,0,0.18);
+      filter: brightness(1.02);
+    }
+    .px-btn:active{
+      transform: translate(2px,2px);
+      box-shadow: 4px 4px 0 rgba(0,0,0,0.18);
+    }
 
-    .px-btn.primary{ background:#ffedf4; }
-    .px-btn.danger{ background:#e9f0ff; }
+    /* Fade overlay between screens */
+    .fade{
+      position:absolute;
+      inset:0;
+      background: #ffffff;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity var(--fadeDur) ease;
+    }
+    .fade.on{ opacity:1; }
 
-    /* animations */
+    /* ====== Motion ====== */
     @keyframes enterLeftToCenter {
-      from { transform: translateX(-10vw); }
-      to   { transform: translateX(calc(50vw - var(--centerX))); }
+      from { transform: translate3d(-70vw, -50%, 0); }
+      to   { transform: translate3d(calc(50vw - var(--centerX)), -50%, 0); }
     }
     @keyframes exitCenterToRight {
-      from { transform: translateX(calc(50vw - var(--centerX))); }
-      to   { transform: translateX(120vw); }
+      from { transform: translate3d(calc(50vw - var(--centerX)), -50%, 0); }
+      to   { transform: translate3d(140vw, -50%, 0); }
     }
+    /* drop while staying centered horizontally */
     @keyframes dropDown {
-      from { transform: translateX(calc(50vw - var(--centerX))) translateY(0); }
-      to   { transform: translateX(calc(50vw - var(--centerX))) translateY(64px); }
+      from { transform: translate3d(calc(50vw - var(--centerX)), -50%, 0); }
+      to   { transform: translate3d(calc(50vw - var(--centerX)), calc(-50% + 70px), 0); }
     }
 
-    /* end gather layout */
+    /* Final gather */
     .gather{
       position:absolute;
-      bottom: 18vh;
       left: 50%;
-      transform: translateX(-50%);
+      top: 50%;
+      transform: translate(-50%, -50%);
       display:flex;
       align-items:flex-end;
       gap: 14px;
@@ -168,73 +182,108 @@
       width: min(150px, 22vw);
       height:auto;
     }
-    .gather img.peng{ width: min(170px, 26vw); }
+    .gather img.peng{ width: min(175px, 26vw); }
 
-    /* small “fade” between screens */
-    .fade{
-      position:absolute;
-      inset:0;
-      background: #ffffff;
-      opacity:0;
-      pointer-events:none;
-      transition: opacity 280ms ease;
+    /* Small responsive spacing for tiny screens */
+    @media (max-height: 720px){
+      .qa{ top: 6vh; }
+      .actor{ width: min(210px, 44vw); }
     }
-    .fade.on{ opacity:1; }
+
+    /* ====== Per-screen palettes (set these to match your GIF backgrounds) ====== */
+    /* Screen 1 (cats) – adjust as needed */
+    #s1{
+      --bg: #ffffff;            /* cat gifs appear white bg */
+      --qColor: #1b1b1b;
+      --btnBorder: #1b1b1b;
+      --btnText: #1b1b1b;
+      --btnA: #ffe3ee;          /* soft pink */
+      --btnB: #dbe9ff;          /* soft blue */
+    }
+    /* Screen 2 (otter) */
+    #s2{
+      --bg: #ffffff;            /* your otter gif looks white */
+      --qColor: #1b1b1b;
+      --btnBorder: #1b1b1b;
+      --btnText: #1b1b1b;
+      --btnA: #ffd8e6;          /* blush */
+      --btnB: #e7f6ff;          /* icy */
+    }
+    /* Screen 3 (seal) – seal gif looks beige-ish */
+    #s3{
+      --bg: #f3d9b1;            /* sampled vibe from your seal gif */
+      --qColor: #2a1f12;
+      --btnBorder: #2a1f12;
+      --btnText: #2a1f12;
+      --btnA: #fff1d8;          /* cream */
+      --btnB: #f7cfa2;          /* warm sand */
+    }
+    /* Screen 4 (penguin) – light blue-ish */
+    #s4{
+      --bg: #cfe0ff;            /* matches your penguin gif bg */
+      --qColor: #0f1a2a;
+      --btnBorder: #0f1a2a;
+      --btnText: #0f1a2a;
+      --btnA: #e9f2ff;          /* pale ice */
+      --btnB: #ffdbe8;          /* soft pink pop */
+    }
   </style>
 </head>
 <body>
   <div class="stage" id="stage">
-    <div class="ground"></div>
     <div class="fade" id="fade"></div>
 
     <!-- Screen 1: Cat balloon -> drop to cat_middle -->
     <section class="screen active" id="s1">
-      <img class="actor pixel cat-balloon" id="catBalloon" src="cat_balloon.gif" alt="cat balloon" />
-      <img class="actor pixel" id="catMiddle" src="cat_middle.gif" alt="cat" style="display:none;" />
-
       <div class="qa" id="qa1">
         <p class="q">Will you be my Valentine? 💖</p>
         <div class="btnRow">
-          <button class="px-btn primary" data-answer="yes" data-screen="1">YES</button>
-          <button class="px-btn danger" data-answer="no" data-screen="1">NO</button>
+          <button class="px-btn" data-answer="yes" data-screen="1">YES</button>
+          <button class="px-btn alt" data-answer="no" data-screen="1">NO</button>
         </div>
       </div>
+
+      <img class="actor pixel cat-balloon" id="catBalloon" src="cat_balloon.gif" alt="cat balloon" />
+      <img class="actor pixel" id="catMiddle" src="cat_middle.gif" alt="cat" style="display:none;" />
     </section>
 
     <!-- Screen 2: Otter -->
     <section class="screen" id="s2">
-      <img class="actor pixel" id="otter" src="Otter And Axolotl.gif" alt="otter" />
       <div class="qa" id="qa2">
         <p class="q">Are you *really* sure? 🦦</p>
         <div class="btnRow">
-          <button class="px-btn primary" data-answer="yes" data-screen="2">YES</button>
-          <button class="px-btn danger" data-answer="no" data-screen="2">NO</button>
+          <button class="px-btn" data-answer="yes" data-screen="2">YES</button>
+          <button class="px-btn alt" data-answer="no" data-screen="2">NO</button>
         </div>
       </div>
+
+      <img class="actor pixel" id="otter" src="Otter And Axolotl.gif" alt="otter" />
     </section>
 
     <!-- Screen 3: Seal -->
     <section class="screen" id="s3">
-      <img class="actor pixel" id="seal" src="Seal_Walking_1.gif" alt="seal" />
       <div class="qa" id="qa3">
         <p class="q">Okay… last chance. Valentine? 🦭</p>
         <div class="btnRow">
-          <button class="px-btn primary" data-answer="yes" data-screen="3">YES</button>
-          <button class="px-btn danger" data-answer="no" data-screen="3">NO</button>
+          <button class="px-btn" data-answer="yes" data-screen="3">YES</button>
+          <button class="px-btn alt" data-answer="no" data-screen="3">NO</button>
         </div>
       </div>
+
+      <img class="actor pixel" id="seal" src="Seal_Walking_1.gif" alt="seal" />
     </section>
 
     <!-- Screen 4: Penguin + final gather -->
     <section class="screen" id="s4">
-      <img class="actor pixel" id="penguin" src="Penguin_Walking_Pixel.gif" alt="penguin" />
       <div class="qa" id="qa4">
         <p class="q">Final answer… will you be my Valentine? 🐧</p>
         <div class="btnRow">
-          <button class="px-btn primary" data-answer="yes" data-screen="4">YES!!</button>
-          <button class="px-btn danger" data-answer="no" data-screen="4">NO</button>
+          <button class="px-btn" data-answer="yes" data-screen="4">YES!!</button>
+          <button class="px-btn alt" data-answer="no" data-screen="4">NO</button>
         </div>
       </div>
+
+      <img class="actor pixel" id="penguin" src="Penguin_Walking_Pixel.gif" alt="penguin" />
 
       <div class="gather" id="gather">
         <img class="pixel" src="cat_middle.gif" alt="cat" />
@@ -247,163 +296,104 @@
 
   <script>
     const fade = document.getElementById('fade');
+    const rootStyle = getComputedStyle(document.documentElement);
 
-    // Utility: wait
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-    // Utility: set centerX variable per element width (so it centers cleanly)
+    function msVar(name){
+      const v = rootStyle.getPropertyValue(name).trim();
+      return v.endsWith('ms') ? parseInt(v) : 0;
+    }
+
+    // centerX = half actor width
     function setCenterVar(el){
       const w = el.getBoundingClientRect().width;
       el.style.setProperty('--centerX', (w/2) + 'px');
     }
 
-    // Animate actor from left (off-screen) to center
     async function enterToCenter(el){
       el.style.animation = 'none';
-      el.style.left = '-40vw';
+      el.style.left = '-60vw';
       setCenterVar(el);
-      // force reflow
       void el.offsetWidth;
-      el.style.animation = `enterLeftToCenter var(--inDur) ease-out forwards`;
-      await sleep(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--inDur')));
+      el.style.animation = `enterLeftToCenter var(--inDur) cubic-bezier(.12,.9,.18,1) forwards`;
+      await sleep(msVar('--inDur'));
     }
 
-    // Animate actor from center to right
     async function exitToRight(el){
       el.style.animation = 'none';
       setCenterVar(el);
       void el.offsetWidth;
-      el.style.animation = `exitCenterToRight var(--outDur) ease-in forwards`;
-      await sleep(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--outDur')));
+      el.style.animation = `exitCenterToRight var(--outDur) cubic-bezier(.3,.0,.2,1) forwards`;
+      await sleep(msVar('--outDur'));
     }
 
-    // Drop animation while centered
     async function drop(el){
       el.style.animation = 'none';
       setCenterVar(el);
       void el.offsetWidth;
-      el.style.animation = `dropDown var(--dropDur) ease-in forwards`;
-      await sleep(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--dropDur')));
+      el.style.animation = `dropDown var(--dropDur) cubic-bezier(.2,.8,.2,1) forwards`;
+      await sleep(msVar('--dropDur'));
     }
 
-    // Screen switching with a quick fade
     async function goToScreen(fromId, toId){
       fade.classList.add('on');
-      await sleep(280);
+      await sleep(msVar('--fadeDur'));
       document.getElementById(fromId).classList.remove('active');
       document.getElementById(toId).classList.add('active');
-      await sleep(60);
+      await sleep(40);
       fade.classList.remove('on');
-      await sleep(50);
+      await sleep(40);
     }
 
-    // “No” behavior: make it playful but still progress (or loop) — you can change this.
-    // Right now: if NO, it shakes the panel a bit and keeps asking.
+    // NO behavior: keep asking (shake the question slightly)
     function naughtyNo(qaEl){
       qaEl.animate(
         [
-          { transform: 'translateY(0) translateX(0)' },
-          { transform: 'translateY(0) translateX(-8px)' },
-          { transform: 'translateY(0) translateX(8px)' },
-          { transform: 'translateY(0) translateX(-6px)' },
-          { transform: 'translateY(0) translateX(6px)' },
-          { transform: 'translateY(0) translateX(0)' },
+          { transform: 'translateX(-50%) translateY(0)' },
+          { transform: 'translateX(calc(-50% - 8px)) translateY(0)' },
+          { transform: 'translateX(calc(-50% + 8px)) translateY(0)' },
+          { transform: 'translateX(calc(-50% - 6px)) translateY(0)' },
+          { transform: 'translateX(calc(-50% + 6px)) translateY(0)' },
+          { transform: 'translateX(-50%) translateY(0)' },
         ],
         { duration: 420, easing: 'ease-in-out' }
       );
     }
 
-    // Flow
-    async function run(){
-      // Screen 1: cat balloon enters, then drops -> switch gif, show Q1
+    async function screen1(){
       const catBalloon = document.getElementById('catBalloon');
       const catMiddle  = document.getElementById('catMiddle');
       const qa1 = document.getElementById('qa1');
 
+      // hide QA until after center animation
+      qa1.classList.remove('show');
+
       await enterToCenter(catBalloon);
       await drop(catBalloon);
 
+      // swap to cat_middle after drop
       catBalloon.style.display = 'none';
       catMiddle.style.display = 'block';
-      // center the catMiddle at the dropped position visually
-      catMiddle.style.left = catBalloon.style.left;
-      catMiddle.style.bottom = '18vh';
+
+      // keep cat_middle at same centered X and dropped Y
       setCenterVar(catMiddle);
-      // place it at center immediately
-      catMiddle.style.transform = 'translateX(calc(50vw - var(--centerX))) translateY(64px)';
+      catMiddle.style.transform =
+        `translate3d(calc(50vw - var(--centerX)), calc(-50% + 70px), 0)`;
 
+      // show question now
       qa1.classList.add('show');
-
-      // Hook buttons
-      document.querySelectorAll('button[data-answer]').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          const answer = btn.dataset.answer;
-          const screen = btn.dataset.screen;
-
-          if (answer === 'no') {
-            // Just annoyingly refuse to accept no (fits the Valentine meme vibe)
-            const qa = document.getElementById(`qa${screen}`);
-            naughtyNo(qa);
-            return;
-          }
-
-          if (screen === '1') {
-            qa1.classList.remove('show');
-            await sleep(180);
-            await goToScreen('s1','s2');
-            await screen2();
-          }
-
-          if (screen === '2') {
-            const qa2 = document.getElementById('qa2');
-            qa2.classList.remove('show');
-            await sleep(120);
-            const otter = document.getElementById('otter');
-            await exitToRight(otter);
-            await goToScreen('s2','s3');
-            await screen3();
-          }
-
-          if (screen === '3') {
-            const qa3 = document.getElementById('qa3');
-            qa3.classList.remove('show');
-            await sleep(120);
-            const seal = document.getElementById('seal');
-            await exitToRight(seal);
-            await goToScreen('s3','s4');
-            await screen4();
-          }
-
-          if (screen === '4') {
-            const qa4 = document.getElementById('qa4');
-            qa4.classList.remove('show');
-            await sleep(150);
-
-            // Penguin stays centered, show gather
-            const gather = document.getElementById('gather');
-            gather.classList.add('show');
-
-            // little “pop in” animation
-            gather.animate(
-              [
-                { transform: 'translateX(-50%) scale(0.95)', opacity: 0 },
-                { transform: 'translateX(-50%) scale(1.03)', opacity: 1 },
-                { transform: 'translateX(-50%) scale(1.0)', opacity: 1 },
-              ],
-              { duration: 520, easing: 'ease-out' }
-            );
-          }
-        });
-      });
     }
 
     async function screen2(){
       const otter = document.getElementById('otter');
       const qa2 = document.getElementById('qa2');
-      // reset position/animations
+      qa2.classList.remove('show');
+
       otter.style.animation = 'none';
-      otter.style.transform = 'translateX(0)';
-      otter.style.left = '-40vw';
+      otter.style.transform = 'translate3d(0,-50%,0)';
+      otter.style.left = '-60vw';
+
       await enterToCenter(otter);
       qa2.classList.add('show');
     }
@@ -411,9 +401,12 @@
     async function screen3(){
       const seal = document.getElementById('seal');
       const qa3 = document.getElementById('qa3');
+      qa3.classList.remove('show');
+
       seal.style.animation = 'none';
-      seal.style.transform = 'translateX(0)';
-      seal.style.left = '-40vw';
+      seal.style.transform = 'translate3d(0,-50%,0)';
+      seal.style.left = '-60vw';
+
       await enterToCenter(seal);
       qa3.classList.add('show');
     }
@@ -421,24 +414,85 @@
     async function screen4(){
       const penguin = document.getElementById('penguin');
       const qa4 = document.getElementById('qa4');
+      qa4.classList.remove('show');
 
       penguin.style.animation = 'none';
-      penguin.style.transform = 'translateX(0)';
-      penguin.style.left = '-40vw';
+      penguin.style.transform = 'translate3d(0,-50%,0)';
+      penguin.style.left = '-60vw';
 
       await enterToCenter(penguin);
       qa4.classList.add('show');
     }
 
-    // start
-    run();
-    // keep centering correct on resize
+    async function run(){
+      await screen1();
+
+      document.querySelectorAll('button[data-answer]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const answer = btn.dataset.answer;
+          const screen = btn.dataset.screen;
+
+          if (answer === 'no') {
+            naughtyNo(document.getElementById(`qa${screen}`));
+            return;
+          }
+
+          if (screen === '1') {
+            document.getElementById('qa1').classList.remove('show');
+            await sleep(120);
+            await goToScreen('s1','s2');
+            await screen2();
+            return;
+          }
+
+          if (screen === '2') {
+            document.getElementById('qa2').classList.remove('show');
+            await sleep(100);
+            await exitToRight(document.getElementById('otter'));
+            await goToScreen('s2','s3');
+            await screen3();
+            return;
+          }
+
+          if (screen === '3') {
+            document.getElementById('qa3').classList.remove('show');
+            await sleep(100);
+            await exitToRight(document.getElementById('seal'));
+            await goToScreen('s3','s4');
+            await screen4();
+            return;
+          }
+
+          if (screen === '4') {
+            document.getElementById('qa4').classList.remove('show');
+            await sleep(150);
+
+            // Penguin stays centered; show group in center
+            const gather = document.getElementById('gather');
+            gather.classList.add('show');
+            gather.animate(
+              [
+                { transform: 'translate(-50%,-50%) scale(0.95)', opacity: 0 },
+                { transform: 'translate(-50%,-50%) scale(1.03)', opacity: 1 },
+                { transform: 'translate(-50%,-50%) scale(1.0)', opacity: 1 },
+              ],
+              { duration: 520, easing: 'ease-out' }
+            );
+            return;
+          }
+        });
+      });
+    }
+
+    // keep centerX correct on resize
     window.addEventListener('resize', () => {
       ['catBalloon','catMiddle','otter','seal','penguin'].forEach(id=>{
         const el = document.getElementById(id);
         if (el && el.offsetParent !== null) setCenterVar(el);
       });
     });
+
+    run();
   </script>
 </body>
 </html>
