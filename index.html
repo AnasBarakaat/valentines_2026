@@ -3,331 +3,441 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Will you be my Valentine? 💘</title>
+  <title>Valentine Quest</title>
   <style>
     :root{
-      --bg: #0b1020;
-      --text: #ffffff;
-      --muted: rgba(255,255,255,.82);
-      --card: rgba(0,0,0,.28);
-      --border: rgba(255,255,255,.18);
-      --shadow: 0 18px 60px rgba(0,0,0,.35);
-      --yes: #ff4d7d;
-      --yes2:#ff2f68;
-      --no: rgba(255,255,255,.20);
-      --blur: 14px;
-      --radius: 22px;
+      --bg: #cfe0ff;
+      --panel: rgba(255,255,255,0.85);
+      --text: #1b1b1b;
+      --shadow: rgba(0,0,0,0.18);
+
+      /* tweak these if you want faster/slower movement */
+      --inDur: 1400ms;
+      --outDur: 1200ms;
+      --dropDur: 520ms;
     }
 
     * { box-sizing: border-box; }
-    html, body { height: 100%; margin: 0; }
-    body {
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
       background: var(--bg);
       overflow: hidden;
-      color: var(--text);
     }
 
-    /* Background animation layer */
-    #bg {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      display: block;
-      z-index: 0;
-    }
-
-    /* Darken overlay so text stays readable on bright animations */
-    .overlay {
-      position: fixed;
-      inset: 0;
-      background: radial-gradient(circle at 50% 40%, rgba(0,0,0,.10), rgba(0,0,0,.55));
-      z-index: 1;
-      pointer-events: none;
-    }
-
-    /* Foreground content */
-    .wrap {
+    /* stage */
+    .stage{
       position: relative;
-      z-index: 2;
-      height: 100%;
+      width: 100vw;
+      height: 100vh;
       display: grid;
       place-items: center;
-      padding: 24px;
-    }
-
-    .card {
-      width: min(520px, 92vw);
-      padding: 28px 26px;
-      border-radius: var(--radius);
-      background: var(--card);
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(var(--blur));
-      -webkit-backdrop-filter: blur(var(--blur));
-      text-align: center;
-      transform: translateY(10px);
-      opacity: 0;
-      transition: opacity 600ms ease, transform 600ms ease;
-    }
-
-    .card.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    h1 {
-      margin: 0;
-      font-size: clamp(26px, 4vw, 38px);
-      letter-spacing: -0.02em;
-      line-height: 1.15;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: opacity 650ms ease, transform 650ms ease;
-      transition-delay: 250ms;
-    }
-
-    p {
-      margin: 12px 0 0;
-      color: var(--muted);
-      font-size: 16px;
-      line-height: 1.5;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: opacity 650ms ease, transform 650ms ease;
-      transition-delay: 450ms;
-    }
-
-    .card.show h1,
-    .card.show p {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .btnRow {
-      margin-top: 22px;
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      align-items: center;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: opacity 650ms ease, transform 650ms ease;
-      transition-delay: 900ms;
-    }
-
-    .card.show .btnRow {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    button {
-      appearance: none;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 12px 18px;
-      font-weight: 700;
-      font-size: 16px;
-      cursor: pointer;
-      transition: transform 200ms ease, opacity 200ms ease, filter 200ms ease;
+      overflow: hidden;
       user-select: none;
     }
 
-    #yesBtn {
-      background: linear-gradient(135deg, var(--yes), var(--yes2));
-      color: white;
-      box-shadow: 0 10px 30px rgba(255, 77, 125, .25);
-      transform: scale(1);
+    /* simple soft ground band */
+    .ground{
+      position:absolute;
+      left:0; right:0;
+      bottom:0;
+      height: 28vh;
+      background: rgba(255,255,255,0.45);
+      filter: blur(0px);
     }
 
-    #yesBtn:hover { filter: brightness(1.06); }
-
-    /* "No" is shown but effectively not usable */
-    #noBtn {
-      background: var(--no);
-      color: rgba(255,255,255,.95);
-      cursor: default;
+    /* screens */
+    .screen{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity 350ms ease;
+    }
+    .screen.active{
+      opacity:1;
+      pointer-events:auto;
     }
 
-    /* Optional: little wiggle on first render for cute effect */
-    .wiggle {
-      animation: wiggle 1.2s ease 1;
-    }
-    @keyframes wiggle {
-      0%, 100% { transform: translateY(0); }
-      20% { transform: translateY(-2px); }
-      40% { transform: translateY(2px); }
-      60% { transform: translateY(-1px); }
-      80% { transform: translateY(1px); }
+    /* “pixel” look */
+    .pixel{
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
     }
 
-    /* When "No" is hovered: hide it, enlarge Yes */
-    .noHover #noBtn {
-      opacity: 0;
-      transform: scale(0.7);
-      pointer-events: none;
-      width: 0;
-      padding-left: 0;
-      padding-right: 0;
-      margin: 0;
-      border-width: 0;
-      overflow: hidden;
+    /* animal */
+    .actor{
+      position:absolute;
+      bottom: 18vh;
+      left: -40vw; /* start off-screen */
+      width: min(220px, 40vw);
+      height: auto;
+      transform: translateX(0);
+    }
+    /* slightly different default for the cat balloon so it sits higher */
+    .actor.cat-balloon{
+      bottom: 28vh;
+      width: min(200px, 38vw);
     }
 
-    .noHover #yesBtn {
-      transform: scale(1.22);
-      filter: brightness(1.06);
+    /* question panel */
+    .qa{
+      position:absolute;
+      bottom: 6vh;
+      width: min(680px, 92vw);
+      background: var(--panel);
+      border: 4px solid #1b1b1b;
+      box-shadow: 10px 10px 0 var(--shadow);
+      padding: 16px 16px 14px;
+      border-radius: 10px; /* tiny rounding ok; keep pixel vibe with border/shadow */
+      opacity:0;
+      transform: translateY(10px);
+      transition: opacity 260ms ease, transform 260ms ease;
+    }
+    .qa.show{
+      opacity:1;
+      transform: translateY(0);
+    }
+    .q{
+      margin:0 0 10px 0;
+      font-weight: 800;
+      color: var(--text);
+      font-size: clamp(18px, 2.2vw, 26px);
+      letter-spacing: 0.2px;
+      text-align:center;
     }
 
-    /* Mobile: tapping No triggers same behavior */
-    @media (hover: none) {
-      #noBtn { cursor: pointer; }
+    /* pixel buttons */
+    .btnRow{
+      display:flex;
+      gap:12px;
+      justify-content:center;
+      flex-wrap:wrap;
+    }
+    .px-btn{
+      appearance:none;
+      border: 4px solid #1b1b1b;
+      background: #ffffff;
+      color:#1b1b1b;
+      padding: 10px 18px;
+      font-weight: 900;
+      font-size: 18px;
+      cursor:pointer;
+      box-shadow: 6px 6px 0 var(--shadow);
+      transform: translate(0,0);
+      transition: transform 80ms ease, box-shadow 80ms ease;
+      border-radius: 8px;
+    }
+    .px-btn:hover{ transform: translate(-1px,-1px); box-shadow: 7px 7px 0 var(--shadow); }
+    .px-btn:active{ transform: translate(2px,2px); box-shadow: 4px 4px 0 var(--shadow); }
+
+    .px-btn.primary{ background:#ffedf4; }
+    .px-btn.danger{ background:#e9f0ff; }
+
+    /* animations */
+    @keyframes enterLeftToCenter {
+      from { transform: translateX(-10vw); }
+      to   { transform: translateX(calc(50vw - var(--centerX))); }
+    }
+    @keyframes exitCenterToRight {
+      from { transform: translateX(calc(50vw - var(--centerX))); }
+      to   { transform: translateX(120vw); }
+    }
+    @keyframes dropDown {
+      from { transform: translateX(calc(50vw - var(--centerX))) translateY(0); }
+      to   { transform: translateX(calc(50vw - var(--centerX))) translateY(64px); }
     }
 
-    /* Tiny footer text if you want */
-    .hint {
-      margin-top: 14px;
-      font-size: 12px;
-      color: rgba(255,255,255,.55);
-      opacity: 0;
-      transition: opacity 650ms ease;
-      transition-delay: 1100ms;
+    /* end gather layout */
+    .gather{
+      position:absolute;
+      bottom: 18vh;
+      left: 50%;
+      transform: translateX(-50%);
+      display:flex;
+      align-items:flex-end;
+      gap: 14px;
+      opacity:0;
+      transition: opacity 300ms ease;
+      pointer-events:none;
     }
-    .card.show .hint { opacity: 1; }
+    .gather.show{ opacity:1; }
+    .gather img{
+      width: min(150px, 22vw);
+      height:auto;
+    }
+    .gather img.peng{ width: min(170px, 26vw); }
+
+    /* small “fade” between screens */
+    .fade{
+      position:absolute;
+      inset:0;
+      background: #ffffff;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity 280ms ease;
+    }
+    .fade.on{ opacity:1; }
   </style>
 </head>
-
 <body>
-  <!-- Your background animation canvas -->
-  <canvas id="bg"></canvas>
-  <div class="overlay"></div>
+  <div class="stage" id="stage">
+    <div class="ground"></div>
+    <div class="fade" id="fade"></div>
 
-  <div class="wrap">
-    <div class="card" id="card">
-      <h1 id="headline">Will you be my Valentine? 💘</h1>
-      <p id="subtext">I have a very important question for you…</p>
+    <!-- Screen 1: Cat balloon -> drop to cat_middle -->
+    <section class="screen active" id="s1">
+      <img class="actor pixel cat-balloon" id="catBalloon" src="cat_balloon.gif" alt="cat balloon" />
+      <img class="actor pixel" id="catMiddle" src="cat_middle.gif" alt="cat" style="display:none;" />
 
-      <div class="btnRow" id="btnRow">
-        <button id="yesBtn" type="button">Yes 💞</button>
-        <button id="noBtn" type="button" aria-disabled="true">No 🙃</button>
+      <div class="qa" id="qa1">
+        <p class="q">Will you be my Valentine? 💖</p>
+        <div class="btnRow">
+          <button class="px-btn primary" data-answer="yes" data-screen="1">YES</button>
+          <button class="px-btn danger" data-answer="no" data-screen="1">NO</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 2: Otter -->
+    <section class="screen" id="s2">
+      <img class="actor pixel" id="otter" src="Otter And Axolotl.gif" alt="otter" />
+      <div class="qa" id="qa2">
+        <p class="q">Are you *really* sure? 🦦</p>
+        <div class="btnRow">
+          <button class="px-btn primary" data-answer="yes" data-screen="2">YES</button>
+          <button class="px-btn danger" data-answer="no" data-screen="2">NO</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 3: Seal -->
+    <section class="screen" id="s3">
+      <img class="actor pixel" id="seal" src="Seal_Walking_1.gif" alt="seal" />
+      <div class="qa" id="qa3">
+        <p class="q">Okay… last chance. Valentine? 🦭</p>
+        <div class="btnRow">
+          <button class="px-btn primary" data-answer="yes" data-screen="3">YES</button>
+          <button class="px-btn danger" data-answer="no" data-screen="3">NO</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 4: Penguin + final gather -->
+    <section class="screen" id="s4">
+      <img class="actor pixel" id="penguin" src="Penguin_Walking_Pixel.gif" alt="penguin" />
+      <div class="qa" id="qa4">
+        <p class="q">Final answer… will you be my Valentine? 🐧</p>
+        <div class="btnRow">
+          <button class="px-btn primary" data-answer="yes" data-screen="4">YES!!</button>
+          <button class="px-btn danger" data-answer="no" data-screen="4">NO</button>
+        </div>
       </div>
 
-      <div class="hint">P.S. the “No” option is broken 😌</div>
-    </div>
+      <div class="gather" id="gather">
+        <img class="pixel" src="cat_middle.gif" alt="cat" />
+        <img class="pixel" src="Otter And Axolotl.gif" alt="otter" />
+        <img class="pixel" src="Seal_Walking_1.gif" alt="seal" />
+        <img class="pixel peng" src="Penguin_Walking_Pixel.gif" alt="penguin" />
+      </div>
+    </section>
   </div>
 
   <script>
-    // ---------------------------
-    // 1) BACKGROUND ANIMATION HOOK
-    // Put your custom background animation JS inside startBackgroundAnimation()
-    // ---------------------------
-    const canvas = document.getElementById("bg");
-    const ctx = canvas.getContext("2d", { alpha: true });
+    const fade = document.getElementById('fade');
 
-    function resizeCanvas() {
-      const dpr = Math.max(1, window.devicePixelRatio || 1);
-      canvas.width = Math.floor(window.innerWidth * dpr);
-      canvas.height = Math.floor(window.innerHeight * dpr);
-      canvas.style.width = window.innerWidth + "px";
-      canvas.style.height = window.innerHeight + "px";
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Utility: wait
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+    // Utility: set centerX variable per element width (so it centers cleanly)
+    function setCenterVar(el){
+      const w = el.getBoundingClientRect().width;
+      el.style.setProperty('--centerX', (w/2) + 'px');
     }
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
 
-    function startBackgroundAnimation() {
-      // Replace this demo animation with yours.
-      // Demo: floating hearts
-      const hearts = Array.from({ length: 24 }, () => ({
-        x: Math.random() * window.innerWidth,
-        y: window.innerHeight + Math.random() * window.innerHeight,
-        s: 0.6 + Math.random() * 1.6,
-        v: 0.5 + Math.random() * 1.4,
-        a: Math.random() * Math.PI * 2
-      }));
+    // Animate actor from left (off-screen) to center
+    async function enterToCenter(el){
+      el.style.animation = 'none';
+      el.style.left = '-40vw';
+      setCenterVar(el);
+      // force reflow
+      void el.offsetWidth;
+      el.style.animation = `enterLeftToCenter var(--inDur) ease-out forwards`;
+      await sleep(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--inDur')));
+    }
 
-      function drawHeart(x, y, size) {
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.scale(size, size);
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.bezierCurveTo(-10, -10, -25, 5, 0, 22);
-        ctx.bezierCurveTo(25, 5, 10, -10, 0, 0);
-        ctx.closePath();
-        ctx.fillStyle = "rgba(255, 77, 125, 0.18)";
-        ctx.fill();
-        ctx.restore();
-      }
+    // Animate actor from center to right
+    async function exitToRight(el){
+      el.style.animation = 'none';
+      setCenterVar(el);
+      void el.offsetWidth;
+      el.style.animation = `exitCenterToRight var(--outDur) ease-in forwards`;
+      await sleep(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--outDur')));
+    }
 
-      function tick() {
-        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-        for (const h of hearts) {
-          h.y -= h.v;
-          h.x += Math.sin(h.a) * 0.6;
-          h.a += 0.02;
+    // Drop animation while centered
+    async function drop(el){
+      el.style.animation = 'none';
+      setCenterVar(el);
+      void el.offsetWidth;
+      el.style.animation = `dropDown var(--dropDur) ease-in forwards`;
+      await sleep(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--dropDur')));
+    }
 
-          drawHeart(h.x, h.y, h.s);
+    // Screen switching with a quick fade
+    async function goToScreen(fromId, toId){
+      fade.classList.add('on');
+      await sleep(280);
+      document.getElementById(fromId).classList.remove('active');
+      document.getElementById(toId).classList.add('active');
+      await sleep(60);
+      fade.classList.remove('on');
+      await sleep(50);
+    }
 
-          if (h.y < -50) {
-            h.y = window.innerHeight + 80;
-            h.x = Math.random() * window.innerWidth;
+    // “No” behavior: make it playful but still progress (or loop) — you can change this.
+    // Right now: if NO, it shakes the panel a bit and keeps asking.
+    function naughtyNo(qaEl){
+      qaEl.animate(
+        [
+          { transform: 'translateY(0) translateX(0)' },
+          { transform: 'translateY(0) translateX(-8px)' },
+          { transform: 'translateY(0) translateX(8px)' },
+          { transform: 'translateY(0) translateX(-6px)' },
+          { transform: 'translateY(0) translateX(6px)' },
+          { transform: 'translateY(0) translateX(0)' },
+        ],
+        { duration: 420, easing: 'ease-in-out' }
+      );
+    }
+
+    // Flow
+    async function run(){
+      // Screen 1: cat balloon enters, then drops -> switch gif, show Q1
+      const catBalloon = document.getElementById('catBalloon');
+      const catMiddle  = document.getElementById('catMiddle');
+      const qa1 = document.getElementById('qa1');
+
+      await enterToCenter(catBalloon);
+      await drop(catBalloon);
+
+      catBalloon.style.display = 'none';
+      catMiddle.style.display = 'block';
+      // center the catMiddle at the dropped position visually
+      catMiddle.style.left = catBalloon.style.left;
+      catMiddle.style.bottom = '18vh';
+      setCenterVar(catMiddle);
+      // place it at center immediately
+      catMiddle.style.transform = 'translateX(calc(50vw - var(--centerX))) translateY(64px)';
+
+      qa1.classList.add('show');
+
+      // Hook buttons
+      document.querySelectorAll('button[data-answer]').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const answer = btn.dataset.answer;
+          const screen = btn.dataset.screen;
+
+          if (answer === 'no') {
+            // Just annoyingly refuse to accept no (fits the Valentine meme vibe)
+            const qa = document.getElementById(`qa${screen}`);
+            naughtyNo(qa);
+            return;
           }
-        }
-        requestAnimationFrame(tick);
-      }
-      tick();
+
+          if (screen === '1') {
+            qa1.classList.remove('show');
+            await sleep(180);
+            await goToScreen('s1','s2');
+            await screen2();
+          }
+
+          if (screen === '2') {
+            const qa2 = document.getElementById('qa2');
+            qa2.classList.remove('show');
+            await sleep(120);
+            const otter = document.getElementById('otter');
+            await exitToRight(otter);
+            await goToScreen('s2','s3');
+            await screen3();
+          }
+
+          if (screen === '3') {
+            const qa3 = document.getElementById('qa3');
+            qa3.classList.remove('show');
+            await sleep(120);
+            const seal = document.getElementById('seal');
+            await exitToRight(seal);
+            await goToScreen('s3','s4');
+            await screen4();
+          }
+
+          if (screen === '4') {
+            const qa4 = document.getElementById('qa4');
+            qa4.classList.remove('show');
+            await sleep(150);
+
+            // Penguin stays centered, show gather
+            const gather = document.getElementById('gather');
+            gather.classList.add('show');
+
+            // little “pop in” animation
+            gather.animate(
+              [
+                { transform: 'translateX(-50%) scale(0.95)', opacity: 0 },
+                { transform: 'translateX(-50%) scale(1.03)', opacity: 1 },
+                { transform: 'translateX(-50%) scale(1.0)', opacity: 1 },
+              ],
+              { duration: 520, easing: 'ease-out' }
+            );
+          }
+        });
+      });
     }
 
-    startBackgroundAnimation();
-
-    // ---------------------------
-    // 2) FOREGROUND TRANSITIONS
-    // ---------------------------
-    const card = document.getElementById("card");
-    const yesBtn = document.getElementById("yesBtn");
-    const noBtn = document.getElementById("noBtn");
-    const btnRow = document.getElementById("btnRow");
-
-    // Show the card after a short delay (small transition)
-    setTimeout(() => {
-      card.classList.add("show", "wiggle");
-      setTimeout(() => card.classList.remove("wiggle"), 1300);
-    }, 350);
-
-    // ---------------------------
-    // 3) "NO" DISAPPEARS + YES GROWS (only yes clickable)
-    // ---------------------------
-    function triggerNoHover() {
-      card.classList.add("noHover");
-    }
-    function resetNoHover() {
-      card.classList.remove("noHover");
+    async function screen2(){
+      const otter = document.getElementById('otter');
+      const qa2 = document.getElementById('qa2');
+      // reset position/animations
+      otter.style.animation = 'none';
+      otter.style.transform = 'translateX(0)';
+      otter.style.left = '-40vw';
+      await enterToCenter(otter);
+      qa2.classList.add('show');
     }
 
-    // Desktop hover
-    noBtn.addEventListener("mouseenter", triggerNoHover);
-    btnRow.addEventListener("mouseleave", resetNoHover);
+    async function screen3(){
+      const seal = document.getElementById('seal');
+      const qa3 = document.getElementById('qa3');
+      seal.style.animation = 'none';
+      seal.style.transform = 'translateX(0)';
+      seal.style.left = '-40vw';
+      await enterToCenter(seal);
+      qa3.classList.add('show');
+    }
 
-    // Mobile: tap No triggers same behavior (but still not actionable)
-    noBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      triggerNoHover();
-    });
+    async function screen4(){
+      const penguin = document.getElementById('penguin');
+      const qa4 = document.getElementById('qa4');
 
-    // Ensure "No" never does anything meaningful
-    noBtn.addEventListener("pointerdown", (e) => e.preventDefault());
+      penguin.style.animation = 'none';
+      penguin.style.transform = 'translateX(0)';
+      penguin.style.left = '-40vw';
 
-    // Yes is the only real action
-    yesBtn.addEventListener("click", () => {
-      // Change this to whatever you want (redirect, show message, confetti, etc.)
-      card.innerHTML = `
-        <h1 style="margin:0; font-size:clamp(26px,4vw,38px); line-height:1.15;">YAY!! 💖🥹</h1>
-        <p style="margin:12px 0 0; color:rgba(255,255,255,.82); font-size:16px; line-height:1.5;">
-          You just made me the happiest person 😭✨
-        </p>
-      `;
+      await enterToCenter(penguin);
+      qa4.classList.add('show');
+    }
+
+    // start
+    run();
+    // keep centering correct on resize
+    window.addEventListener('resize', () => {
+      ['catBalloon','catMiddle','otter','seal','penguin'].forEach(id=>{
+        const el = document.getElementById(id);
+        if (el && el.offsetParent !== null) setCenterVar(el);
+      });
     });
   </script>
 </body>
