@@ -6,12 +6,9 @@
   <title>Valentine Quest</title>
   <style>
     :root{
-      /* Make entry slower */
       --inDur: 2600ms;
       --outDur: 2000ms;
       --dropDur: 650ms;
-
-      /* Fade speed */
       --fadeDur: 240ms;
     }
 
@@ -20,10 +17,9 @@
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans";
       overflow: hidden;
-      background: #cfe0ff; /* fallback */
+      background: #cfe0ff;
     }
 
-    /* stage */
     .stage{
       position: relative;
       width: 100vw;
@@ -32,7 +28,6 @@
       user-select: none;
     }
 
-    /* screens */
     .screen{
       position:absolute;
       inset:0;
@@ -41,7 +36,6 @@
       opacity:0;
       pointer-events:none;
       transition: opacity var(--fadeDur) ease;
-      /* per-screen */
       background: var(--bg, #cfe0ff);
     }
     .screen.active{
@@ -49,31 +43,68 @@
       pointer-events:auto;
     }
 
-    /* pixel look */
     .pixel{
       image-rendering: pixelated;
       image-rendering: crisp-edges;
     }
 
-    /* ====== ACTOR: CENTER VERTICALLY ====== */
+    /* ===== Falling petals layer ===== */
+    .petals{
+      position:absolute;
+      inset:0;
+      overflow:hidden;
+      pointer-events:none;
+      z-index: 1;
+    }
+    .petal{
+      position:absolute;
+      top: -10vh;
+      width: var(--pSize, 10px);
+      height: calc(var(--pSize, 10px) * 0.75);
+      background: var(--petalColor, rgba(255,255,255,0.9));
+      border-radius: 999px 999px 999px 999px;
+      opacity: var(--pOpacity, 0.9);
+      filter: blur(0px);
+      transform: translate3d(0,0,0) rotate(0deg);
+      animation: fall var(--pDur, 8s) linear infinite;
+    }
+    .petal::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      border-radius: inherit;
+      /* subtle highlight so it feels like a blossom */
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.55), rgba(255,255,255,0.0) 60%);
+      mix-blend-mode: soft-light;
+    }
+
+    @keyframes fall{
+      0%{
+        transform: translate3d(var(--x, 0px), -12vh, 0) rotate(var(--r0, 0deg));
+      }
+      100%{
+        transform: translate3d(calc(var(--x, 0px) + var(--drift, 120px)), 112vh, 0) rotate(var(--r1, 420deg));
+      }
+    }
+
+    /* ===== Actor: center vertically ===== */
     .actor{
       position:absolute;
-      left: -60vw;              /* start off-screen left */
+      left: -60vw;
       top: 50%;
       transform: translate3d(0, -50%, 0);
       width: min(240px, 42vw);
       height: auto;
       will-change: transform;
+      z-index: 3; /* above petals */
     }
-
-    /* cat balloon sits a bit higher BEFORE drop for effect */
     .actor.cat-balloon{
       width: min(220px, 40vw);
       top: 42%;
       transform: translate3d(0, -50%, 0);
     }
 
-    /* Question area ABOVE actor, no background */
+    /* Question above, no background */
     .qa{
       position:absolute;
       top: 10vh;
@@ -81,15 +112,13 @@
       transform: translateX(-50%);
       width: min(760px, 94vw);
       text-align:center;
-
       opacity:0;
-      transform-origin: center;
       transition: opacity 260ms ease, transform 260ms ease;
       pointer-events:none;
+      z-index: 4; /* above petals + actor */
     }
     .qa.show{
       opacity:1;
-      transform: translateX(-50%) translateY(0);
       pointer-events:auto;
     }
 
@@ -98,13 +127,11 @@
       font-weight: 900;
       font-size: clamp(18px, 2.4vw, 28px);
       color: var(--qColor, #1b1b1b);
-      /* readable on soft backgrounds, still "no panel" */
       text-shadow:
-        0 2px 0 rgba(255,255,255,0.65),
+        0 2px 0 rgba(255,255,255,0.55),
         0 0 10px rgba(0,0,0,0.08);
     }
 
-    /* ====== PIXEL BUTTONS w/ per-screen palette ====== */
     .btnRow{
       display:flex;
       gap:14px;
@@ -125,9 +152,7 @@
       transform: translate(0,0);
       transition: transform 90ms ease, box-shadow 90ms ease, filter 120ms ease;
     }
-    .px-btn.alt{
-      background: var(--btnB, #ffffff);
-    }
+    .px-btn.alt{ background: var(--btnB, #ffffff); }
     .px-btn:hover{
       transform: translate(-1px,-1px);
       box-shadow: 7px 7px 0 rgba(0,0,0,0.18);
@@ -138,7 +163,6 @@
       box-shadow: 4px 4px 0 rgba(0,0,0,0.18);
     }
 
-    /* Fade overlay between screens */
     .fade{
       position:absolute;
       inset:0;
@@ -146,10 +170,11 @@
       opacity:0;
       pointer-events:none;
       transition: opacity var(--fadeDur) ease;
+      z-index: 10;
     }
     .fade.on{ opacity:1; }
 
-    /* ====== Motion ====== */
+    /* Motion */
     @keyframes enterLeftToCenter {
       from { transform: translate3d(-70vw, -50%, 0); }
       to   { transform: translate3d(calc(50vw - var(--centerX)), -50%, 0); }
@@ -158,7 +183,6 @@
       from { transform: translate3d(calc(50vw - var(--centerX)), -50%, 0); }
       to   { transform: translate3d(140vw, -50%, 0); }
     }
-    /* drop while staying centered horizontally */
     @keyframes dropDown {
       from { transform: translate3d(calc(50vw - var(--centerX)), -50%, 0); }
       to   { transform: translate3d(calc(50vw - var(--centerX)), calc(-50% + 70px), 0); }
@@ -176,56 +200,57 @@
       opacity:0;
       transition: opacity 300ms ease;
       pointer-events:none;
+      z-index: 5;
     }
     .gather.show{ opacity:1; }
-    .gather img{
-      width: min(150px, 22vw);
-      height:auto;
-    }
+    .gather img{ width: min(150px, 22vw); height:auto; }
     .gather img.peng{ width: min(175px, 26vw); }
 
-    /* Small responsive spacing for tiny screens */
     @media (max-height: 720px){
       .qa{ top: 6vh; }
       .actor{ width: min(210px, 44vw); }
     }
 
-    /* ====== Per-screen palettes (set these to match your GIF backgrounds) ====== */
-    /* Screen 1 (cats) – adjust as needed */
+    /* ===== Per-screen backgrounds + petal colors ===== */
+    /* 1) Cat: slight grey bg + white petals */
     #s1{
-      --bg: #ffffff;            /* cat gifs appear white bg */
-      --qColor: #1b1b1b;
-      --btnBorder: #1b1b1b;
-      --btnText: #1b1b1b;
-      --btnA: #ffe3ee;          /* soft pink */
-      --btnB: #dbe9ff;          /* soft blue */
+      --bg: #e9ecef;
+      --petalColor: rgba(255,255,255,0.92);
+      --qColor: #111;
+      --btnBorder: #111;
+      --btnText: #111;
+      --btnA: #ffffff;
+      --btnB: #f2f2f2;
     }
-    /* Screen 2 (otter) */
+    /* 2) Otter: light brown bg + brown petals */
     #s2{
-      --bg: #ffffff;            /* your otter gif looks white */
-      --qColor: #1b1b1b;
-      --btnBorder: #1b1b1b;
-      --btnText: #1b1b1b;
-      --btnA: #ffd8e6;          /* blush */
-      --btnB: #e7f6ff;          /* icy */
-    }
-    /* Screen 3 (seal) – seal gif looks beige-ish */
-    #s3{
-      --bg: #f3d9b1;            /* sampled vibe from your seal gif */
+      --bg: #e7d4c2;
+      --petalColor: rgba(150, 96, 62, 0.55);
       --qColor: #2a1f12;
       --btnBorder: #2a1f12;
       --btnText: #2a1f12;
-      --btnA: #fff1d8;          /* cream */
-      --btnB: #f7cfa2;          /* warm sand */
+      --btnA: #f6eadf;
+      --btnB: #ddbfa8;
     }
-    /* Screen 4 (penguin) – light blue-ish */
+    /* 3) Seal: lighter bg + pink petals */
+    #s3{
+      --bg: #fde6ee;
+      --petalColor: rgba(255, 152, 190, 0.60);
+      --qColor: #2a1220;
+      --btnBorder: #2a1220;
+      --btnText: #2a1220;
+      --btnA: #fff4f8;
+      --btnB: #ffd1e2;
+    }
+    /* 4) Penguin: light bg + light blue petals */
     #s4{
-      --bg: #cfe0ff;            /* matches your penguin gif bg */
+      --bg: #cfe0ff;
+      --petalColor: rgba(155, 195, 255, 0.55);
       --qColor: #0f1a2a;
       --btnBorder: #0f1a2a;
       --btnText: #0f1a2a;
-      --btnA: #e9f2ff;          /* pale ice */
-      --btnB: #ffdbe8;          /* soft pink pop */
+      --btnA: #e9f2ff;
+      --btnB: #ffdbe8;
     }
   </style>
 </head>
@@ -233,8 +258,10 @@
   <div class="stage" id="stage">
     <div class="fade" id="fade"></div>
 
-    <!-- Screen 1: Cat balloon -> drop to cat_middle -->
+    <!-- Screen 1 -->
     <section class="screen active" id="s1">
+      <div class="petals" aria-hidden="true"></div>
+
       <div class="qa" id="qa1">
         <p class="q">Will you be my Valentine? 💖</p>
         <div class="btnRow">
@@ -243,12 +270,14 @@
         </div>
       </div>
 
-      <img class="actor pixel cat-balloon" id="catBalloon" src="cat_balloon.gif" alt="cat balloon" />
+      <img class="actor pixel cat-balloon" id="catBalloon" src="cat_balloon_transparent.gif" alt="cat balloon" />
       <img class="actor pixel" id="catMiddle" src="cat_middle.gif" alt="cat" style="display:none;" />
     </section>
 
-    <!-- Screen 2: Otter -->
+    <!-- Screen 2 -->
     <section class="screen" id="s2">
+      <div class="petals" aria-hidden="true"></div>
+
       <div class="qa" id="qa2">
         <p class="q">Are you *really* sure? 🦦</p>
         <div class="btnRow">
@@ -257,11 +286,13 @@
         </div>
       </div>
 
-      <img class="actor pixel" id="otter" src="Otter And Axolotl.gif" alt="otter" />
+      <img class="actor pixel" id="otter" src="Otter_And_Axolotl_transparent.gif" alt="otter" />
     </section>
 
-    <!-- Screen 3: Seal -->
+    <!-- Screen 3 -->
     <section class="screen" id="s3">
+      <div class="petals" aria-hidden="true"></div>
+
       <div class="qa" id="qa3">
         <p class="q">Okay… last chance. Valentine? 🦭</p>
         <div class="btnRow">
@@ -270,11 +301,13 @@
         </div>
       </div>
 
-      <img class="actor pixel" id="seal" src="Seal_Walking_1.gif" alt="seal" />
+      <img class="actor pixel" id="seal" src="Seal_Walking_1_transparent.gif" alt="seal" />
     </section>
 
-    <!-- Screen 4: Penguin + final gather -->
+    <!-- Screen 4 -->
     <section class="screen" id="s4">
+      <div class="petals" aria-hidden="true"></div>
+
       <div class="qa" id="qa4">
         <p class="q">Final answer… will you be my Valentine? 🐧</p>
         <div class="btnRow">
@@ -283,13 +316,13 @@
         </div>
       </div>
 
-      <img class="actor pixel" id="penguin" src="Penguin_Walking_Pixel.gif" alt="penguin" />
+      <img class="actor pixel" id="penguin" src="Penguin_Walking_Pixel_transparent.gif" alt="penguin" />
 
       <div class="gather" id="gather">
         <img class="pixel" src="cat_middle.gif" alt="cat" />
-        <img class="pixel" src="Otter And Axolotl.gif" alt="otter" />
-        <img class="pixel" src="Seal_Walking_1.gif" alt="seal" />
-        <img class="pixel peng" src="Penguin_Walking_Pixel.gif" alt="penguin" />
+        <img class="pixel" src="Otter_And_Axolotl_transparent.gif" alt="otter" />
+        <img class="pixel" src="Seal_Walking_1_transparent.gif" alt="seal" />
+        <img class="pixel peng" src="Penguin_Walking_Pixel_transparent.gif" alt="penguin" />
       </div>
     </section>
   </div>
@@ -297,7 +330,6 @@
   <script>
     const fade = document.getElementById('fade');
     const rootStyle = getComputedStyle(document.documentElement);
-
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
     function msVar(name){
@@ -305,7 +337,6 @@
       return v.endsWith('ms') ? parseInt(v) : 0;
     }
 
-    // centerX = half actor width
     function setCenterVar(el){
       const w = el.getBoundingClientRect().width;
       el.style.setProperty('--centerX', (w/2) + 'px');
@@ -346,7 +377,6 @@
       await sleep(40);
     }
 
-    // NO behavior: keep asking (shake the question slightly)
     function naughtyNo(qaEl){
       qaEl.animate(
         [
@@ -361,27 +391,61 @@
       );
     }
 
+    /* ===== Petal generator (per screen) ===== */
+    function setupPetals(){
+      document.querySelectorAll('.screen').forEach(screen => {
+        const layer = screen.querySelector('.petals');
+        if (!layer) return;
+
+        // prevent duplication if reloaded
+        layer.innerHTML = '';
+
+        const count = 28; // increase for heavier snowfall
+        for (let i = 0; i < count; i++){
+          const p = document.createElement('div');
+          p.className = 'petal';
+
+          // randomize size, drift, duration, delay, opacity
+          const size = 7 + Math.random() * 9; // px
+          const dur = 6 + Math.random() * 7;  // seconds
+          const delay = -Math.random() * dur; // start mid-animation
+          const drift = (Math.random() * 220) - 110; // px
+          const x = Math.random() * window.innerWidth; // px
+
+          const r0 = Math.random() * 180;
+          const r1 = 260 + Math.random() * 420;
+
+          p.style.setProperty('--pSize', size + 'px');
+          p.style.setProperty('--pDur', dur + 's');
+          p.style.animationDelay = delay + 's';
+          p.style.setProperty('--drift', drift + 'px');
+          p.style.setProperty('--x', x + 'px');
+          p.style.setProperty('--r0', r0 + 'deg');
+          p.style.setProperty('--r1', r1 + 'deg');
+          p.style.setProperty('--pOpacity', (0.35 + Math.random() * 0.55).toFixed(2));
+
+          layer.appendChild(p);
+        }
+      });
+    }
+
     async function screen1(){
       const catBalloon = document.getElementById('catBalloon');
       const catMiddle  = document.getElementById('catMiddle');
       const qa1 = document.getElementById('qa1');
 
-      // hide QA until after center animation
       qa1.classList.remove('show');
 
       await enterToCenter(catBalloon);
       await drop(catBalloon);
 
-      // swap to cat_middle after drop
       catBalloon.style.display = 'none';
       catMiddle.style.display = 'block';
 
-      // keep cat_middle at same centered X and dropped Y
       setCenterVar(catMiddle);
       catMiddle.style.transform =
         `translate3d(calc(50vw - var(--centerX)), calc(-50% + 70px), 0)`;
 
-      // show question now
       qa1.classList.add('show');
     }
 
@@ -425,6 +489,7 @@
     }
 
     async function run(){
+      setupPetals();
       await screen1();
 
       document.querySelectorAll('button[data-answer]').forEach(btn => {
@@ -467,7 +532,6 @@
             document.getElementById('qa4').classList.remove('show');
             await sleep(150);
 
-            // Penguin stays centered; show group in center
             const gather = document.getElementById('gather');
             gather.classList.add('show');
             gather.animate(
@@ -478,18 +542,17 @@
               ],
               { duration: 520, easing: 'ease-out' }
             );
-            return;
           }
         });
       });
     }
 
-    // keep centerX correct on resize
     window.addEventListener('resize', () => {
       ['catBalloon','catMiddle','otter','seal','penguin'].forEach(id=>{
         const el = document.getElementById(id);
         if (el && el.offsetParent !== null) setCenterVar(el);
       });
+      setupPetals(); // rebuild petal X positions for new width
     });
 
     run();
