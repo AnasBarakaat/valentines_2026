@@ -1,38 +1,38 @@
-<!doctype html>
+]<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Valentine Quest</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <style>
     :root{
-      --inDur: 2600ms;
-      --outDur: 2000ms;
-      --dropDur: 650ms;
       --fadeDur: 240ms;
     }
 
     * { box-sizing: border-box; }
+
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans";
-      overflow: hidden;
-      background: #cfe0ff;
+      overflow:hidden;
+      background:#cfe0ff;
     }
 
     .stage{
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-      user-select: none;
+      position:relative;
+      width:100vw;
+      height:100vh;
+      overflow:hidden;
+      user-select:none;
     }
 
     .screen{
       position:absolute;
       inset:0;
-      display:grid;
-      place-items:center;
       opacity:0;
       pointer-events:none;
       transition: opacity var(--fadeDur) ease;
@@ -54,206 +54,184 @@
       inset:0;
       overflow:hidden;
       pointer-events:none;
-      z-index: 1;
+      z-index:1;
     }
     .petal{
       position:absolute;
-      top: -10vh;
+      top:-12vh;
       width: var(--pSize, 10px);
       height: calc(var(--pSize, 10px) * 0.75);
       background: var(--petalColor, rgba(255,255,255,0.9));
-      border-radius: 999px 999px 999px 999px;
+      border-radius:999px;
       opacity: var(--pOpacity, 0.9);
-      filter: blur(0px);
       transform: translate3d(0,0,0) rotate(0deg);
       animation: fall var(--pDur, 8s) linear infinite;
+      filter: blur(0px);
     }
     .petal::after{
       content:"";
       position:absolute;
       inset:0;
       border-radius: inherit;
-      /* subtle highlight so it feels like a blossom */
       background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.55), rgba(255,255,255,0.0) 60%);
       mix-blend-mode: soft-light;
     }
-
     @keyframes fall{
-      0%{
-        transform: translate3d(var(--x, 0px), -12vh, 0) rotate(var(--r0, 0deg));
-      }
-      100%{
-        transform: translate3d(calc(var(--x, 0px) + var(--drift, 120px)), 112vh, 0) rotate(var(--r1, 420deg));
-      }
+      0%   { transform: translate3d(var(--x,0px), -12vh, 0) rotate(var(--r0,0deg)); }
+      100% { transform: translate3d(calc(var(--x,0px) + var(--drift,120px)), 112vh, 0) rotate(var(--r1,420deg)); }
     }
 
-    /* ===== Actor: center vertically ===== */
+    /* ===== Actor (GSAP controls x/y) ===== */
     .actor{
       position:absolute;
-      left: -60vw;
-      top: 50%;
-      transform: translate3d(0, -50%, 0);
-      width: min(240px, 42vw);
-      height: auto;
+      left:0;
+      top:50%;
+      transform: translateY(-50%);
+      width: min(240px, 44vw);
+      height:auto;
+      z-index:3;
+      opacity:1;
       will-change: transform;
-      z-index: 3; /* above petals */
     }
     .actor.cat-balloon{
-      width: min(220px, 40vw);
-      top: 42%;
-      transform: translate3d(0, -50%, 0);
+      width:min(220px, 42vw);
+      top:42%;
     }
 
-    /* Question above, no background */
+    /* Make penguin a bit larger (responsive) */
+    #penguin{
+      width: min(300px, 56vw);
+    }
+
+    /* ===== Question block (no background) ===== */
     .qa{
       position:absolute;
-      top: 10vh;
-      left: 50%;
+      top: 6vh;
+      left:50%;
       transform: translateX(-50%);
-      width: min(760px, 94vw);
+      width: min(860px, 94vw);
       text-align:center;
       opacity:0;
-      transition: opacity 260ms ease, transform 260ms ease;
       pointer-events:none;
-      z-index: 4; /* above petals + actor */
+      z-index:4;
+      transition: opacity 220ms ease;
     }
     .qa.show{
       opacity:1;
       pointer-events:auto;
     }
-
     .q{
-      margin:0 0 12px 0;
-      font-weight: 900;
-      font-size: clamp(18px, 2.4vw, 28px);
-      color: var(--qColor, #1b1b1b);
-      text-shadow:
-        0 2px 0 rgba(255,255,255,0.55),
-        0 0 10px rgba(0,0,0,0.08);
+      margin:0 0 14px 0;
+      font-weight:900;
+      font-size: clamp(16px, 2.5vw, 28px);
+      color: var(--qColor, #111);
+      text-shadow: 0 2px 0 rgba(255,255,255,0.55), 0 0 10px rgba(0,0,0,0.08);
+      line-height: 1.25;
+      padding: 0 8px;
     }
 
-    .btnRow{
-      display:flex;
-      gap:14px;
-      justify-content:center;
-      flex-wrap:wrap;
-    }
+    /* Buttons (Bootstrap layout + your pixel vibe) */
     .px-btn{
       appearance:none;
-      border: 4px solid var(--btnBorder, #1b1b1b);
-      background: var(--btnA, #ffffff);
-      color: var(--btnText, #1b1b1b);
-      padding: 10px 18px;
-      font-weight: 900;
+      border:4px solid var(--btnBorder, #111);
+      background: var(--btnA, #fff);
+      color: var(--btnText, #111);
+      padding: 12px 22px;
+      font-weight:900;
       font-size: 18px;
-      cursor:pointer;
-      border-radius: 8px;
+      border-radius:10px;
       box-shadow: 6px 6px 0 rgba(0,0,0,0.18);
-      transform: translate(0,0);
-      transition: transform 90ms ease, box-shadow 90ms ease, filter 120ms ease;
+      cursor:pointer;
     }
-    .px-btn.alt{ background: var(--btnB, #ffffff); }
-    .px-btn:hover{
-      transform: translate(-1px,-1px);
-      box-shadow: 7px 7px 0 rgba(0,0,0,0.18);
-      filter: brightness(1.02);
-    }
-    .px-btn:active{
-      transform: translate(2px,2px);
-      box-shadow: 4px 4px 0 rgba(0,0,0,0.18);
-    }
+    .px-btn.alt{ background: var(--btnB, #f2f2f2); }
 
+    /* Fade overlay */
     .fade{
       position:absolute;
       inset:0;
-      background: #ffffff;
+      background:#fff;
       opacity:0;
       pointer-events:none;
       transition: opacity var(--fadeDur) ease;
-      z-index: 10;
+      z-index:10;
     }
     .fade.on{ opacity:1; }
-
-    /* Motion */
-    @keyframes enterLeftToCenter {
-      from { transform: translate3d(-70vw, -50%, 0); }
-      to   { transform: translate3d(calc(50vw - var(--centerX)), -50%, 0); }
-    }
-    @keyframes exitCenterToRight {
-      from { transform: translate3d(calc(50vw - var(--centerX)), -50%, 0); }
-      to   { transform: translate3d(140vw, -50%, 0); }
-    }
-    @keyframes dropDown {
-      from { transform: translate3d(calc(50vw - var(--centerX)), -50%, 0); }
-      to   { transform: translate3d(calc(50vw - var(--centerX)), calc(-50% + 70px), 0); }
-    }
 
     /* Final gather */
     .gather{
       position:absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
+      left:50%;
+      top:50%;
+      transform: translate(-50%,-50%);
       display:flex;
-      align-items:flex-end;
-      gap: 14px;
+      flex-direction:column;
+      align-items:center;
+      gap: 12px;
       opacity:0;
-      transition: opacity 300ms ease;
       pointer-events:none;
-      z-index: 5;
+      z-index:5;
     }
     .gather.show{ opacity:1; }
-    .gather img{ width: min(150px, 22vw); height:auto; }
-    .gather img.peng{ width: min(175px, 26vw); }
 
-    @media (max-height: 720px){
-      .qa{ top: 6vh; }
-      .actor{ width: min(210px, 44vw); }
+    .gather .rowImgs{
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      gap: 12px;
+      flex-wrap:wrap;
     }
+    .gather img{ width:min(150px, 26vw); height:auto; }
+    .gather img.peng{ width:min(190px, 34vw); }
 
-    /* ===== Per-screen backgrounds + petal colors ===== */
-    /* 1) Cat: slight grey bg + white petals */
+    /* ===== Per-screen theme ===== */
     #s1{
-      --bg: #e9ecef;
+      --bg:#e9ecef;
       --petalColor: rgba(255,255,255,0.92);
-      --qColor: #111;
-      --btnBorder: #111;
-      --btnText: #111;
-      --btnA: #ffffff;
-      --btnB: #f2f2f2;
+      --qColor:#111;
+      --btnBorder:#111;
+      --btnText:#111;
+      --btnA:#ffffff;
+      --btnB:#f2f2f2;
     }
-    /* 2) Otter: light brown bg + brown petals */
     #s2{
-      --bg: #e7d4c2;
+      --bg:#e7d4c2;
       --petalColor: rgba(150, 96, 62, 0.55);
-      --qColor: #2a1f12;
-      --btnBorder: #2a1f12;
-      --btnText: #2a1f12;
-      --btnA: #f6eadf;
-      --btnB: #ddbfa8;
+      --qColor:#2a1f12;
+      --btnBorder:#2a1f12;
+      --btnText:#2a1f12;
+      --btnA:#f6eadf;
+      --btnB:#ddbfa8;
     }
-    /* 3) Seal: lighter bg + pink petals */
     #s3{
-      --bg: #fde6ee;
+      --bg:#fde6ee;
       --petalColor: rgba(255, 152, 190, 0.60);
-      --qColor: #2a1220;
-      --btnBorder: #2a1220;
-      --btnText: #2a1220;
-      --btnA: #fff4f8;
-      --btnB: #ffd1e2;
+      --qColor:#2a1220;
+      --btnBorder:#2a1220;
+      --btnText:#2a1220;
+      --btnA:#fff4f8;
+      --btnB:#ffd1e2;
     }
-    /* 4) Penguin: light bg + light blue petals */
     #s4{
-      --bg: #cfe0ff;
+      --bg:#cfe0ff;
       --petalColor: rgba(155, 195, 255, 0.55);
-      --qColor: #0f1a2a;
-      --btnBorder: #0f1a2a;
-      --btnText: #0f1a2a;
-      --btnA: #e9f2ff;
-      --btnB: #ffdbe8;
+      --qColor:#0f1a2a;
+      --btnBorder:#0f1a2a;
+      --btnText:#0f1a2a;
+      --btnA:#e9f2ff;
+      --btnB:#ffdbe8;
+    }
+
+    /* Phone tweaks */
+    @media (max-width: 576px){
+      .qa{ top: 4vh; }
+      .px-btn{ font-size:16px; padding: 12px 20px; }
+      .actor{ width: min(220px, 64vw); }
+      #penguin{ width: min(280px, 72vw); }
+      .actor.cat-balloon{ width:min(210px, 62vw); }
     }
   </style>
 </head>
+
 <body>
   <div class="stage" id="stage">
     <div class="fade" id="fade"></div>
@@ -263,8 +241,8 @@
       <div class="petals" aria-hidden="true"></div>
 
       <div class="qa" id="qa1">
-        <p class="q">Hi my love, I sent Dusty over to you with a message. Would you like to read it?</p>
-        <div class="btnRow">
+        <p class="q">Hi my love, I sent Dusty over to you with a message. Would you like to read it? 🐈</p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
           <button class="px-btn" data-answer="yes" data-screen="1">YES</button>
           <button class="px-btn alt" data-answer="no" data-screen="1">NO</button>
         </div>
@@ -279,8 +257,8 @@
       <div class="petals" aria-hidden="true"></div>
 
       <div class="qa" id="qa2">
-        <p class="q">You've been going through ALOT, and I know you *Otter* be like these guys right now, swimming in peace.<br>Right? 🦦</p>
-        <div class="btnRow">
+        <p class="q">You've been going through ALOT, and I know you *Otter* be like these guys right now, swimming in peace.<br>Right? 🦭</p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
           <button class="px-btn" data-answer="yes" data-screen="2">YES</button>
           <button class="px-btn alt" data-answer="no" data-screen="2">NO</button>
         </div>
@@ -294,8 +272,8 @@
       <div class="petals" aria-hidden="true"></div>
 
       <div class="qa" id="qa3">
-        <p class="q">The Seal is excited to be with you and play.<br>He also thinks the new Silent Hill movie was a disaster<br>His friend wants to ask you something, should we go to his friend? 🦭</p>
-        <div class="btnRow">
+        <p class="q">The Seal is excited to be with you and play.<br>He also thinks the new Silent Hill movie was a disaster<br>His friend wants to ask you something, should we go to his friend? 🦦</p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
           <button class="px-btn" data-answer="yes" data-screen="3">YES</button>
           <button class="px-btn alt" data-answer="no" data-screen="3">NO</button>
         </div>
@@ -309,8 +287,8 @@
       <div class="petals" aria-hidden="true"></div>
 
       <div class="qa" id="qa4">
-        <p class="q">NOOT NOOT.<br>A message from MISTA GORILLA.<br>Would you be my Valentine? 💖🐧</p>
-        <div class="btnRow">
+        <p class="q">NOOT NOOT.<br>A message from MISTA GORILLA.<br>Will you be my Valentine? 💖🐧</p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
           <button class="px-btn" data-answer="yes" data-screen="4">YES!!</button>
           <button class="px-btn alt" data-answer="no" data-screen="4">NO</button>
         </div>
@@ -319,99 +297,41 @@
       <img class="actor pixel" id="penguin" src="Penguin_Walking_Pixel_transparent.gif" alt="penguin" />
 
       <div class="gather" id="gather">
-         <p class="q">WE ALL LOVE YOU, ESPECIALLY MISTA GORILLA!</p>
-        <img class="pixel" src="cat_middle.gif" alt="cat" />
-        <img class="pixel" src="Otter_And_Axolotl_transparent.gif" alt="otter" />
-        <img class="pixel" src="Seal_Walking_1_transparent.gif" alt="seal" />
-        <img class="pixel peng" src="Penguin_Walking_Pixel_transparent.gif" alt="penguin" />
+        <p class="q mb-0">WE ALL LOVE YOU, ESPECIALLY MISTA GORILLA!</p>
+        <div class="rowImgs">
+          <img class="pixel" src="cat_middle.gif" alt="cat" />
+          <img class="pixel" src="Otter_And_Axolotl_transparent.gif" alt="otter" />
+          <img class="pixel" src="Seal_Walking_1_transparent.gif" alt="seal" />
+          <img class="pixel peng" src="Penguin_Walking_Pixel_transparent.gif" alt="penguin" />
+        </div>
       </div>
     </section>
   </div>
 
+  <!-- GSAP -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+
   <script>
     const fade = document.getElementById('fade');
-    const rootStyle = getComputedStyle(document.documentElement);
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-    function msVar(name){
-      const v = rootStyle.getPropertyValue(name).trim();
-      return v.endsWith('ms') ? parseInt(v) : 0;
-    }
-
-    function setCenterVar(el){
-      const w = el.getBoundingClientRect().width;
-      el.style.setProperty('--centerX', (w/2) + 'px');
-    }
-
-    async function enterToCenter(el){
-      el.style.animation = 'none';
-      el.style.left = '-60vw';
-      setCenterVar(el);
-      void el.offsetWidth;
-      el.style.animation = `enterLeftToCenter var(--inDur) cubic-bezier(.12,.9,.18,1) forwards`;
-      await sleep(msVar('--inDur'));
-    }
-
-    async function exitToRight(el){
-      el.style.animation = 'none';
-      setCenterVar(el);
-      void el.offsetWidth;
-      el.style.animation = `exitCenterToRight var(--outDur) cubic-bezier(.3,.0,.2,1) forwards`;
-      await sleep(msVar('--outDur'));
-    }
-
-    async function drop(el){
-      el.style.animation = 'none';
-      setCenterVar(el);
-      void el.offsetWidth;
-      el.style.animation = `dropDown var(--dropDur) cubic-bezier(.2,.8,.2,1) forwards`;
-      await sleep(msVar('--dropDur'));
-    }
-
-    async function goToScreen(fromId, toId){
-      fade.classList.add('on');
-      await sleep(msVar('--fadeDur'));
-      document.getElementById(fromId).classList.remove('active');
-      document.getElementById(toId).classList.add('active');
-      await sleep(40);
-      fade.classList.remove('on');
-      await sleep(40);
-    }
-
-    function naughtyNo(qaEl){
-      qaEl.animate(
-        [
-          { transform: 'translateX(-50%) translateY(0)' },
-          { transform: 'translateX(calc(-50% - 8px)) translateY(0)' },
-          { transform: 'translateX(calc(-50% + 8px)) translateY(0)' },
-          { transform: 'translateX(calc(-50% - 6px)) translateY(0)' },
-          { transform: 'translateX(calc(-50% + 6px)) translateY(0)' },
-          { transform: 'translateX(-50%) translateY(0)' },
-        ],
-        { duration: 420, easing: 'ease-in-out' }
-      );
-    }
-
-    /* ===== Petal generator (per screen) ===== */
+    // ===== Petals =====
     function setupPetals(){
       document.querySelectorAll('.screen').forEach(screen => {
         const layer = screen.querySelector('.petals');
         if (!layer) return;
-
-        // prevent duplication if reloaded
         layer.innerHTML = '';
 
-        const count = 28; // increase for heavier snowfall
+        const count = (window.innerWidth < 600) ? 18 : 28;
         for (let i = 0; i < count; i++){
           const p = document.createElement('div');
           p.className = 'petal';
 
-          // randomize size, drift, duration, delay, opacity
-          const size = 7 + Math.random() * 9; // px
-          const dur = 6 + Math.random() * 7;  // seconds
-          const delay = -Math.random() * dur; // start mid-animation
-          const drift = (Math.random() * 220) - 110; // px
-          const x = Math.random() * window.innerWidth; // px
+          const size = 7 + Math.random() * 9;
+          const dur = 6 + Math.random() * 7;
+          const delay = -Math.random() * dur;
+          const drift = (Math.random() * 220) - 110;
+          const x = Math.random() * window.innerWidth;
 
           const r0 = Math.random() * 180;
           const r1 = 260 + Math.random() * 420;
@@ -430,6 +350,71 @@
       });
     }
 
+    // ===== Helpers =====
+    async function waitForImage(img){
+      if (!img) return;
+      if (img.complete && img.naturalWidth) return;
+      try { await img.decode(); }
+      catch { await new Promise(res => img.onload = () => res()); }
+    }
+
+    async function goToScreen(fromId, toId){
+      fade.classList.add('on');
+      await sleep(240);
+      document.getElementById(fromId).classList.remove('active');
+      document.getElementById(toId).classList.add('active');
+      await sleep(60);
+      fade.classList.remove('on');
+      await sleep(60);
+    }
+
+    // ===== GSAP movement (stable + responsive) =====
+    const WALK_IN_DURATION  = 3.2;  // slower “walking” vibe
+    const WALK_OUT_DURATION = 2.4;
+
+    function centerX(el){
+      const w = el.getBoundingClientRect().width || 200;
+      return (window.innerWidth / 2) - (w / 2);
+    }
+
+    function walkIn(el){
+      gsap.set(el, { x: -window.innerWidth - 240, y: 0, opacity: 1 });
+      return gsap.to(el, { x: centerX(el), duration: WALK_IN_DURATION, ease: "power1.out" });
+    }
+
+    function walkOutRight(el){
+      return gsap.to(el, { x: window.innerWidth + 320, duration: WALK_OUT_DURATION, ease: "power1.in" });
+    }
+
+    function dropDown(el){
+      return gsap.to(el, { y: "+=70", duration: 0.65, ease: "power2.in" });
+    }
+
+    function startWalkBob(el){
+      gsap.killTweensOf(el, "y");
+      return gsap.to(el, { y: "+=6", duration: 0.22, yoyo:true, repeat:-1, ease:"sine.inOut" });
+    }
+
+    function stopWalkBob(el){
+      gsap.killTweensOf(el, "y");
+      gsap.set(el, { y: 0 });
+    }
+
+    function naughtyNo(qaEl){
+      qaEl.animate(
+        [
+          { transform: 'translateX(-50%) translateY(0)' },
+          { transform: 'translateX(calc(-50% - 8px)) translateY(0)' },
+          { transform: 'translateX(calc(-50% + 8px)) translateY(0)' },
+          { transform: 'translateX(calc(-50% - 6px)) translateY(0)' },
+          { transform: 'translateX(calc(-50% + 6px)) translateY(0)' },
+          { transform: 'translateX(-50%) translateY(0)' },
+        ],
+        { duration: 420, easing: 'ease-in-out' }
+      );
+    }
+
+    // ===== Screen flows =====
     async function screen1(){
       const catBalloon = document.getElementById('catBalloon');
       const catMiddle  = document.getElementById('catMiddle');
@@ -437,15 +422,22 @@
 
       qa1.classList.remove('show');
 
-      await enterToCenter(catBalloon);
-      await drop(catBalloon);
+      catBalloon.style.display = "block";
+      catMiddle.style.display = "none";
 
-      catBalloon.style.display = 'none';
-      catMiddle.style.display = 'block';
+      await waitForImage(catBalloon);
+      await waitForImage(catMiddle);
 
-      setCenterVar(catMiddle);
-      catMiddle.style.transform =
-        `translate3d(calc(50vw - var(--centerX)), calc(-50% + 70px), 0)`;
+      stopWalkBob(catBalloon);
+      const bob = startWalkBob(catBalloon);
+      await walkIn(catBalloon);
+      bob.kill();
+
+      await dropDown(catBalloon);
+
+      catBalloon.style.display = "none";
+      catMiddle.style.display = "block";
+      gsap.set(catMiddle, { x: centerX(catMiddle), y: 70, opacity: 1 });
 
       qa1.classList.add('show');
     }
@@ -455,11 +447,13 @@
       const qa2 = document.getElementById('qa2');
       qa2.classList.remove('show');
 
-      otter.style.animation = 'none';
-      otter.style.transform = 'translate3d(0,-50%,0)';
-      otter.style.left = '-60vw';
+      await waitForImage(otter);
 
-      await enterToCenter(otter);
+      stopWalkBob(otter);
+      const bob = startWalkBob(otter);
+      await walkIn(otter);
+      bob.kill();
+
       qa2.classList.add('show');
     }
 
@@ -468,11 +462,13 @@
       const qa3 = document.getElementById('qa3');
       qa3.classList.remove('show');
 
-      seal.style.animation = 'none';
-      seal.style.transform = 'translate3d(0,-50%,0)';
-      seal.style.left = '-60vw';
+      await waitForImage(seal);
 
-      await enterToCenter(seal);
+      stopWalkBob(seal);
+      const bob = startWalkBob(seal);
+      await walkIn(seal);
+      bob.kill();
+
       qa3.classList.add('show');
     }
 
@@ -481,11 +477,13 @@
       const qa4 = document.getElementById('qa4');
       qa4.classList.remove('show');
 
-      penguin.style.animation = 'none';
-      penguin.style.transform = 'translate3d(0,-50%,0)';
-      penguin.style.left = '-60vw';
+      await waitForImage(penguin);
 
-      await enterToCenter(penguin);
+      stopWalkBob(penguin);
+      const bob = startWalkBob(penguin);
+      await walkIn(penguin);
+      bob.kill();
+
       qa4.classList.add('show');
     }
 
@@ -513,8 +511,8 @@
 
           if (screen === '2') {
             document.getElementById('qa2').classList.remove('show');
-            await sleep(100);
-            await exitToRight(document.getElementById('otter'));
+            await sleep(120);
+            await walkOutRight(document.getElementById('otter'));
             await goToScreen('s2','s3');
             await screen3();
             return;
@@ -522,8 +520,8 @@
 
           if (screen === '3') {
             document.getElementById('qa3').classList.remove('show');
-            await sleep(100);
-            await exitToRight(document.getElementById('seal'));
+            await sleep(120);
+            await walkOutRight(document.getElementById('seal'));
             await goToScreen('s3','s4');
             await screen4();
             return;
@@ -549,15 +547,24 @@
     }
 
     window.addEventListener('resize', () => {
-      ['catBalloon','catMiddle','otter','seal','penguin'].forEach(id=>{
+      setupPetals();
+
+      // keep currently visible sprite centered after resize
+      const ids = ['catMiddle','otter','seal','penguin'];
+      for (const id of ids){
         const el = document.getElementById(id);
-        if (el && el.offsetParent !== null) setCenterVar(el);
-      });
-      setupPetals(); // rebuild petal X positions for new width
+        if (!el || el.offsetParent === null) continue;
+        const x = gsap.getProperty(el, "x");
+        if (typeof x === "number" && x > -window.innerWidth && x < window.innerWidth){
+          gsap.set(el, { x: centerX(el) });
+        }
+      }
     });
 
     run();
   </script>
+
+  <!-- Bootstrap JS (optional, not required for layout, but ok to include) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
