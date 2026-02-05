@@ -81,7 +81,7 @@
       100% { transform: translate3d(calc(var(--x,0px) + var(--drift,120px)), 112vh, 0) rotate(var(--r1,420deg)); }
     }
 
-    /* ===== Actor (GSAP controls x/y) ===== */
+    /* ===== Actor (GSAP controls x/y/rotation) ===== */
     .actor{
       position:absolute;
       left:0;
@@ -98,12 +98,12 @@
       top:42%;
     }
 
-    /* Make penguin a bit larger (responsive) */
+    /* Slightly bigger penguin to match others */
     #penguin{
       width: min(300px, 56vw);
     }
 
-    /* ===== Question block (no background) ===== */
+    /* ===== Question block ===== */
     .qa{
       position:absolute;
       top: 6vh;
@@ -130,7 +130,7 @@
       padding: 0 8px;
     }
 
-    /* Buttons (Bootstrap layout + your pixel vibe) */
+    /* Buttons */
     .px-btn{
       appearance:none;
       border:4px solid var(--btnBorder, #111);
@@ -183,7 +183,7 @@
     .gather img{ width:min(150px, 26vw); height:auto; }
     .gather img.peng{ width:min(190px, 34vw); }
 
-    /* ===== Per-screen theme ===== */
+    /* ===== Theme ===== */
     #s1{
       --bg:#e9ecef;
       --petalColor: rgba(255,255,255,0.92);
@@ -257,7 +257,7 @@
       <div class="petals" aria-hidden="true"></div>
 
       <div class="qa" id="qa2">
-        <p class="q">You've been going through ALOT, and I know you *Otter* be like these guys right now, swimming in peace.<br>Right? 🦭</p>
+        <p class="q">You've been going through ALOT, and I know you *Otter* be like these guys right now, swimming in peace.<br>Right? 🦦</p>
         <div class="d-flex justify-content-center gap-3 flex-wrap">
           <button class="px-btn" data-answer="yes" data-screen="2">YES</button>
           <button class="px-btn alt" data-answer="no" data-screen="2">NO</button>
@@ -272,7 +272,7 @@
       <div class="petals" aria-hidden="true"></div>
 
       <div class="qa" id="qa3">
-        <p class="q">The Seal is excited to be with you and play.<br>He also thinks the new Silent Hill movie was a disaster.<br>His friend wants to ask you something, should we go to his friend? 🦦</p>
+        <p class="q">The Seal is excited to be with you and play.<br>He also thinks the new Silent Hill movie was a disaster<br>His friend wants to ask you something, should we go to his friend? 🦭</p>
         <div class="d-flex justify-content-center gap-3 flex-wrap">
           <button class="px-btn" data-answer="yes" data-screen="3">YES</button>
           <button class="px-btn alt" data-answer="no" data-screen="3">NO</button>
@@ -368,8 +368,8 @@
       await sleep(60);
     }
 
-    // ===== GSAP movement (stable + responsive) =====
-    const WALK_IN_DURATION  = 3.2;  // slower “walking” vibe
+    // ===== GSAP movement =====
+    const WALK_IN_DURATION  = 3.2;
     const WALK_OUT_DURATION = 2.4;
 
     function centerX(el){
@@ -378,7 +378,7 @@
     }
 
     function walkIn(el){
-      gsap.set(el, { x: -window.innerWidth - 240, y: 0, opacity: 1 });
+      gsap.set(el, { x: -window.innerWidth - 240, y: 0, rotation: 0, opacity: 1 });
       return gsap.to(el, { x: centerX(el), duration: WALK_IN_DURATION, ease: "power1.out" });
     }
 
@@ -390,14 +390,39 @@
       return gsap.to(el, { y: "+=70", duration: 0.65, ease: "power2.in" });
     }
 
-    function startWalkBob(el){
-      gsap.killTweensOf(el, "y");
-      return gsap.to(el, { y: "+=6", duration: 0.22, yoyo:true, repeat:-1, ease:"sine.inOut" });
-    }
+    // ===== Stronger “walk feel”: bob + micro-step + tiny tilt =====
+    function startWalkFeel(el){
+      gsap.killTweensOf(el);
 
-    function stopWalkBob(el){
-      gsap.killTweensOf(el, "y");
-      gsap.set(el, { y: 0 });
+      const bob = gsap.to(el, {
+        y: "+=5",
+        duration: 0.22,
+        yoyo: true,
+        repeat: -1,
+        ease: "sine.inOut"
+      });
+
+      const step = gsap.to(el, {
+        x: "+=6",
+        duration: 0.18,
+        yoyo: true,
+        repeat: -1,
+        ease: "sine.inOut"
+      });
+
+      const tilt = gsap.to(el, {
+        rotation: 1.4,
+        transformOrigin: "50% 100%",
+        duration: 0.26,
+        yoyo: true,
+        repeat: -1,
+        ease: "sine.inOut"
+      });
+
+      return () => {
+        bob.kill(); step.kill(); tilt.kill();
+        gsap.set(el, { y: 0, rotation: 0 });
+      };
     }
 
     function naughtyNo(qaEl){
@@ -428,16 +453,15 @@
       await waitForImage(catBalloon);
       await waitForImage(catMiddle);
 
-      stopWalkBob(catBalloon);
-      const bob = startWalkBob(catBalloon);
+      const stopFeel = startWalkFeel(catBalloon);
       await walkIn(catBalloon);
-      bob.kill();
+      stopFeel();
 
       await dropDown(catBalloon);
 
       catBalloon.style.display = "none";
       catMiddle.style.display = "block";
-      gsap.set(catMiddle, { x: centerX(catMiddle), y: 70, opacity: 1 });
+      gsap.set(catMiddle, { x: centerX(catMiddle), y: 70, rotation: 0, opacity: 1 });
 
       qa1.classList.add('show');
     }
@@ -449,10 +473,9 @@
 
       await waitForImage(otter);
 
-      stopWalkBob(otter);
-      const bob = startWalkBob(otter);
+      const stopFeel = startWalkFeel(otter);
       await walkIn(otter);
-      bob.kill();
+      stopFeel();
 
       qa2.classList.add('show');
     }
@@ -464,10 +487,9 @@
 
       await waitForImage(seal);
 
-      stopWalkBob(seal);
-      const bob = startWalkBob(seal);
+      const stopFeel = startWalkFeel(seal);
       await walkIn(seal);
-      bob.kill();
+      stopFeel();
 
       qa3.classList.add('show');
     }
@@ -479,10 +501,9 @@
 
       await waitForImage(penguin);
 
-      stopWalkBob(penguin);
-      const bob = startWalkBob(penguin);
+      const stopFeel = startWalkFeel(penguin);
       await walkIn(penguin);
-      bob.kill();
+      stopFeel();
 
       qa4.classList.add('show');
     }
@@ -564,9 +585,7 @@
     run();
   </script>
 
-  <!-- Bootstrap JS (optional, not required for layout, but ok to include) -->
+  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-
